@@ -31,9 +31,25 @@ fun main(args: Array<String>) {
         thread.join()
     }
 
-    for (sheetResult in sheetResults) {
+    println()
+    val result = analyzeSheetResults(sheetResults)
+    println()
+    println("Over all longest String result: $result")
+}
+
+fun analyzeSheetResults(sheetResults: Array<SheetResult?>): WorkbookResult {
+    var maxStringLength = 0
+    var maxStringLengthSheetIndex = 0
+    for ((index, sheetResult) in sheetResults.withIndex()) {
         println(sheetResult)
+        if (sheetResult != null) {
+            if (sheetResult.maxStringLength > maxStringLength) {
+                maxStringLength = sheetResult.maxStringLength
+                maxStringLengthSheetIndex = index
+            }
+        }
     }
+    return WorkbookResult(maxStringLength, sheetResults[maxStringLengthSheetIndex]!!.cell)
 }
 
 private fun createWorkbook(args: Array<String>): Workbook {
@@ -55,15 +71,15 @@ private fun createWorkbook(args: Array<String>): Workbook {
 }
 
 private fun analyzeSheet(sheet: Sheet, sheetIndex: Int, sheetResults: Array<SheetResult?>) {
-    var max = 0
+    var maxStringLength = 0
     var maxRow = 0
     var maxCell = 0
-    var maxRowCount = 0
+    var maxColumnCount = 0
     for (rowIndex in 0 until sheet.lastRowNum + 1) {
         val row = sheet.getRow(rowIndex)
         if (row != null) {
-            if (maxRowCount < row.lastCellNum) {
-                maxRowCount = row.lastCellNum.toInt()
+            if (maxColumnCount < row.lastCellNum) {
+                maxColumnCount = row.lastCellNum.toInt() - 1
             }
             for (cellIndex in 0 until row.lastCellNum) {
                 val cell = row.getCell(cellIndex)
@@ -73,8 +89,8 @@ private fun analyzeSheet(sheet: Sheet, sheetIndex: Int, sheetResults: Array<Shee
                         if (value != null) {
                             val length = value.length
                             println("sheet: $sheetIndex, row: $rowIndex, cell: $cellIndex, length: $length")
-                            if (length > max) {
-                                max = length
+                            if (length > maxStringLength) {
+                                maxStringLength = length
                                 maxRow = rowIndex
                                 maxCell = cellIndex
                             }
@@ -86,5 +102,7 @@ private fun analyzeSheet(sheet: Sheet, sheetIndex: Int, sheetResults: Array<Shee
             }
         }
     }
-    sheetResults[sheetIndex] = SheetResult(sheetIndex, max, maxRow, maxCell, sheet.lastRowNum, maxRowCount)
+    val cell = CellIdentification(sheetIndex, maxRow, maxCell)
+    val sheetSize = SheetSize(sheet.lastRowNum, maxColumnCount)
+    sheetResults[sheetIndex] = SheetResult(cell, maxStringLength, sheetSize)
 }
