@@ -5,7 +5,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.FileInputStream
 
 /**
- * reads a path to a file from the first command line argument, tris to the file as excel workbook
+ * reads a path to a file from the first command line argument, tries to read the file as excel workbook
  * and reports the longest String in a cell, highest row and column count per sheet.
  */
 fun main(args: Array<String>) {
@@ -37,21 +37,6 @@ fun main(args: Array<String>) {
     println("Over all longest String result: $result")
 }
 
-fun analyzeSheetResults(sheetResults: Array<SheetResult?>): WorkbookResult {
-    var maxStringLength = 0
-    var maxStringLengthSheetIndex = 0
-    for ((index, sheetResult) in sheetResults.withIndex()) {
-        println(sheetResult)
-        if (sheetResult != null) {
-            if (sheetResult.maxStringLength > maxStringLength) {
-                maxStringLength = sheetResult.maxStringLength
-                maxStringLengthSheetIndex = index
-            }
-        }
-    }
-    return WorkbookResult(maxStringLength, sheetResults[maxStringLengthSheetIndex]!!.cell)
-}
-
 private fun createWorkbook(args: Array<String>): Workbook {
     val path = if (args.isNotEmpty()) {
         //reading path to workbook to be analyzed from first command line argument
@@ -62,12 +47,11 @@ private fun createWorkbook(args: Array<String>): Workbook {
     }
     println("path to analyze: $path")
     val inputStream = FileInputStream(path)
-    val workbook = if (path.endsWith(".xls")) {
+    return if (path.endsWith(".xls")) {
         HSSFWorkbook(inputStream)
     } else {
         XSSFWorkbook(inputStream)
     }
-    return workbook
 }
 
 private fun analyzeSheet(sheet: Sheet, sheetIndex: Int, sheetResults: Array<SheetResult?>) {
@@ -105,4 +89,19 @@ private fun analyzeSheet(sheet: Sheet, sheetIndex: Int, sheetResults: Array<Shee
     val cell = CellIdentification(sheetIndex, maxRow, maxCell)
     val sheetSize = SheetSize(sheet.lastRowNum, maxColumnCount)
     sheetResults[sheetIndex] = SheetResult(cell, maxStringLength, sheetSize)
+}
+
+fun analyzeSheetResults(sheetResults: Array<SheetResult?>): WorkbookResult {
+    var maxStringLength = 0
+    var maxStringLengthSheetIndex = 0
+    for ((index, sheetResult) in sheetResults.withIndex()) {
+        println(sheetResult)
+        if (sheetResult != null) {
+            if (sheetResult.maxStringLength > maxStringLength) {
+                maxStringLength = sheetResult.maxStringLength
+                maxStringLengthSheetIndex = index
+            }
+        }
+    }
+    return WorkbookResult(maxStringLength, sheetResults[maxStringLengthSheetIndex]!!.cell)
 }
